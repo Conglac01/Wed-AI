@@ -1,0 +1,30 @@
+# Environment
+.env
+.env.*
+
+# Node
+node_modules/
+
+# Python virtual environments
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+.pytest_cache/
+
+# Build output
+dist/
+build/
+
+# macOS
+.DS_Store
+
+# Databases
+*.db
+*.sqlite3
+
+# Uploads (keep directory, ignore contents)
+storage/uploads/*
+!storage/uploads/cvs/
+!storage/uploads/cvs/.gitkeep
