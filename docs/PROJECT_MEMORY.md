@@ -21,6 +21,7 @@ This project is the redesigned and improved version of PB1 and PB2. It combines 
 | 1.6  | User Web Auth UI Polish (v4)  | 2026-06-10  | #1E5FD4 palette, hero cards, OAuth btns, 40/60 layout |
 | 2.1  | Job Model/Schema             | 2026-06-10  | Job model (JSONB skills), schemas, migration, tests    |
 | 2.2  | CSV + Mock Job Sources       | 2026-06-10  | BaseJobSource ABC, MockSource (18 jobs), CSVSource (20) |
+| 2.3  | Job Import Pipeline          | 2026-06-10  | 8-stage pipeline, ImportSummary, dry_run, skill extractor |
 
 ## Known Issues
 
@@ -103,6 +104,19 @@ This project is the redesigned and improved version of PB1 and PB2. It combines 
 2. **Case-insensitive skill dedup** — `"React;react"` → `["React"]`. Keeps first casing, case-insensitive key comparison. Critical for matching pipeline.
 3. **CSV validation at row level** — every row validated through `JobCreate` before return. Duplicate detection on (title, company, location).
 4. **Data/sample is source of truth for test data** — CSV path convention uses `Path(__file__).resolve().parents[4]` from test files.
+
+### From Phase 2.3
+
+1. **Pipeline is the single write path** — sources and crawlers MUST NOT write to DB. All writes go through `import_pipeline.py`.
+2. **One failure ≠ batch failure** — each job is persisted individually; a single bad row does not crash the entire import.
+3. **Quality score is a separate concern** — `JobCreate` has no `quality_score` field. Calculated during persistence and passed to `repository.create()` as a keyword argument.
+4. **Fake repository for unit tests** — `tests/fakes.py` provides an in-memory `FakeJobRepository` that follows the same interface as `JobRepository`, enabling pipeline tests without a real database.
+
+### From Phase 2.3 Fixes
+
+1. **Dry run now computes quality scores** — `dry_run=True` runs the complete pipeline including quality score calculation; only `repository.create()` is skipped.
+2. **Skill extraction preserves first-appearance order** — skills are ordered by their position in the source text, not alphabetically.
+3. **Batch insert TODO** — noted in `import_pipeline.py` and README for Phase 4+ performance optimization.
 
 ---
 

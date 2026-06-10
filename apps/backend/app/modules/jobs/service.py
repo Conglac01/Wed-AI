@@ -1,11 +1,9 @@
-"""JobService — business logic layer. Skeleton only in Phase 2.1."""
-
-# TODO Phase 2.2: Add job listing, search, and CRUD operations
+"""JobService — business logic layer."""
 
 from sqlalchemy.orm import Session
 
 from app.modules.jobs.repository import JobRepository
-from app.modules.jobs.schema import JobRead
+from app.modules.jobs.schema import JobCreate, JobRead
 
 
 class JobService:
@@ -22,4 +20,15 @@ class JobService:
         job = self.repo.get_by_id(job_id)
         if job is None:
             return None
+        return JobRead.model_validate(job)
+
+    # ------------------------------------------------------------------
+    # Write
+    # ------------------------------------------------------------------
+
+    def create_job(
+        self, data: JobCreate, *, quality_score: float = 0.0
+    ) -> JobRead:
+        """Insert a new job with an optional quality score."""
+        job = self.repo.create(data, quality_score=quality_score)
         return JobRead.model_validate(job)

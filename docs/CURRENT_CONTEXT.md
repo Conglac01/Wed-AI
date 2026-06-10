@@ -10,7 +10,7 @@
 
 ## Current Phase
 
-**Phase 2.2** — CSV + Mock Job Sources
+**Phase 2.3** — Job Import Pipeline
 
 ## Status
 
@@ -18,21 +18,24 @@
 
 ## Recent Changes
 
-- `BaseJobSource` ABC — pluggable contract for all future job sources
-- `MockJobSource` — 18 realistic Vietnamese IT jobs (8 categories, 10 companies, 4 locations)
-- `CSVJobSource` — loads & validates jobs from semicolon-delimited CSV with skill normalization
-- `jobs_sample.csv` — 20 curated IT job listings (Vietnamese content, YYYY-MM-DD deadlines)
-- Skill normalization: trim, dedent, deduplicate case-insensitively (keep first casing)
-- Duplicate detection: (title, company_name, location) uniqueness enforced
-- 36/36 tests passing (28 source tests + 8 schema tests)
-- No database writes — all sources are read-only (return `list[JobCreate]`)
+- Import pipeline: `validate → clean → deduplicate → normalize → extract skills → quality score → persist`
+- 8 pipeline stages: `validation.py`, `cleaning.py`, `deduplication.py`, `normalization.py`, `skill_extractor.py`, `quality_score.py`, `import_pipeline.py` (orchestrator)
+- `ImportSummary` Pydantic model — JSON-serializable import report
+- `JobRepository` extended: `create()` (with quality_score), `exists_active_duplicate()`
+- `JobService` extended: `create_job()`
+- `dry_run=True` mode — runs full pipeline without database writes
+- Skill extractor: 33 canonical IT skills, case-insensitive matching, canonical names returned
+- Quality score: deterministic 0.0–1.0 across 9 criteria
+- Duplicate detection: in-batch (first wins) + DB-aware (is_active=True, deleted_at IS NULL)
+- Transaction safety: one bad job does not crash the batch
+- FAKE repository (`tests/fakes.py`) for pipeline unit tests
+- 74/74 tests passing (36 existing + 38 new pipeline tests)
 
 ## Known Issues
 
-- No CRUD endpoints yet (coming in Phase 2.3)
-- No search/filter logic yet
-- No frontend jobs UI yet
-- CSV sample data is for development/testing only — not production
+- No CRUD endpoints yet (coming in Phase 2.4)
+- Skill extractor uses hardcoded dictionary — no AI/ML
+- Quality score is deterministic but simplistic — future phases may add AI
 
 ## Blockers
 
@@ -40,7 +43,7 @@ None.
 
 ## Next Phase
 
-**Phase 2.3** — Job CRUD & Search API
+**Phase 2.4** — Job CRUD & Search API
 
 ## Commands
 
@@ -48,7 +51,7 @@ None.
 # Backend
 cd apps/backend
 source .venv/bin/activate
-pytest app/modules/jobs/tests/ -v   # 36 tests
+.venv/bin/python -m pytest app/modules/jobs/tests/ -v   # 74 tests
 uvicorn app.main:app --reload
 
 # User Web
