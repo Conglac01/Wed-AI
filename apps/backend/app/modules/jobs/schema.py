@@ -94,3 +94,12 @@ class JobListItem(BaseModel):
     quality_score: float
     is_active: bool
     created_at: datetime
+
+
+class JobListResponse(BaseModel):
+    """Paginated job listing response."""
+
+    items: list[JobListItem]
+    total: int
+    page: int
+    limit: int

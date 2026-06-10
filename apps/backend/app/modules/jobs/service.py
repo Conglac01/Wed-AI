@@ -3,7 +3,7 @@
 from sqlalchemy.orm import Session
 
 from app.modules.jobs.repository import JobRepository
-from app.modules.jobs.schema import JobCreate, JobRead
+from app.modules.jobs.schema import JobCreate, JobListResponse, JobListItem, JobRead
 
 
 class JobService:
@@ -13,14 +13,47 @@ class JobService:
         self.repo = JobRepository(db)
 
     # ------------------------------------------------------------------
-    # Read
+    # Read — single
     # ------------------------------------------------------------------
 
-    def get_job_by_id(self, job_id: int) -> JobRead | None:
+    def get_job(self, job_id: int) -> JobRead | None:
+        """Return a single job by id.  Returns None for inactive / deleted."""
         job = self.repo.get_by_id(job_id)
         if job is None:
             return None
         return JobRead.model_validate(job)
+
+    # ------------------------------------------------------------------
+    # Read — list
+    # ------------------------------------------------------------------
+
+    def list_jobs(
+        self,
+        *,
+        keyword: str | None = None,
+        location: str | None = None,
+        skill: str | None = None,
+        page: int = 1,
+        limit: int = 20,
+    ) -> JobListResponse:
+        """Return a paginated list of jobs with optional filters."""
+
+        if page < 1:
+            raise ValueError("page must be >= 1")
+        if limit < 1 or limit > 100:
+            raise ValueError("limit must be between 1 and 100")
+
+        rows, total = self.repo.list_jobs(
+            keyword=keyword,
+            location=location,
+            skill=skill,
+            page=page,
+            limit=limit,
+        )
+
+        items = [JobListItem.model_validate(r) for r in rows]
+
+        return JobListResponse(items=items, total=total, page=page, limit=limit)
 
     # ------------------------------------------------------------------
     # Write

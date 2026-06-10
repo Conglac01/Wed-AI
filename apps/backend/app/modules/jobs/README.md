@@ -15,24 +15,29 @@ Job listing, search, filtering, detail views, data pipeline, and import for Viec
 
 ## Module Files
 
-| File                         | Purpose                                              |
-|------------------------------|------------------------------------------------------|
-| `model.py`                   | `Job` SQLAlchemy model (table `jobs`)                |
-| `schema.py`                  | Pydantic request/response schemas                    |
-| `repository.py`              | Data access layer (create, get_by_id, dup check)     |
-| `service.py`                 | Business logic (create_job)                          |
-| `router.py`                  | API endpoints (health only)                          |
-| `sources/base.py`            | `BaseJobSource` abstract contract                    |
-| `sources/mock_source.py`     | `MockJobSource` — 18 realistic IT jobs               |
-| `sources/csv_source.py`      | `CSVJobSource` — load from semicolon CSV             |
-| `pipeline/validation.py`     | Validate required fields, salary ranges              |
-| `pipeline/cleaning.py`       | Trim whitespace, collapse spaces, blank→None         |
-| `pipeline/deduplication.py`  | In-batch + DB-aware duplicate detection              |
-| `pipeline/normalization.py`  | Skill dedup/casing, location cleanup                 |
-| `pipeline/skill_extractor.py`| Normalize existing skills or extract from text       |
-| `pipeline/quality_score.py`  | Deterministic 0.0–1.0 completeness score             |
-| `pipeline/import_pipeline.py`| Orchestrator: source → validate… → persist → summary |
-| `tests/`                     | 74 tests (schema + sources + pipeline)               |
+| File                              | Purpose                                              |
+|-----------------------------------|------------------------------------------------------|
+| `model.py`                        | `Job` SQLAlchemy model (table `jobs`)                |
+| `schema.py`                       | Pydantic request/response schemas                    |
+| `repository.py`                   | Data access layer (create, get_by_id, dup check)     |
+| `service.py`                      | Business logic (create_job)                          |
+| `router.py`                       | API endpoints (list, detail, health)                 |
+| `sources/base.py`                 | `BaseJobSource` abstract contract                    |
+| `sources/mock_source.py`          | `MockJobSource` — 18 realistic IT jobs               |
+| `sources/csv_source.py`           | `CSVJobSource` — load from semicolon CSV             |
+| `sources/careerlink_source.py`    | `CareerLinkSource` — live scraping from careerlink.vn|
+| `parsers/__init__.py`             | Parser package exports                               |
+| `parsers/detail_parser.py`        | CareerLink HTML → JobCreate (JSON-LD + HTML)         |
+| `parsers/listing_parser.py`       | CareerLink listing → list of detail URLs             |
+| `pipeline/validation.py`          | Validate required fields, salary ranges              |
+| `pipeline/cleaning.py`            | Trim whitespace, collapse spaces, blank→None         |
+| `pipeline/deduplication.py`       | In-batch + DB-aware duplicate detection              |
+| `pipeline/normalization.py`       | Skill dedup/casing, location cleanup                 |
+| `pipeline/skill_extractor.py`     | Normalize existing skills or extract from text       |
+| `pipeline/quality_score.py`       | Deterministic 0.0–1.0 completeness score             |
+| `pipeline/import_pipeline.py`     | Orchestrator: source → validate… → persist → summary |
+| `tests/`                          | 122 tests (schema + sources + pipeline + parsers)    |
+| `tests/fixtures/`                 | Real CareerLink HTML fixtures (4 files)              |
 
 ## Import Pipeline
 
@@ -90,26 +95,47 @@ Pydantic model with: `source_name`, `fetched_count`, `validated_count`, `cleaned
 * Each job committed individually (one failure ≠ batch failure)
 * **TODO (Phase 4+):** Consider batch insert for large imports (1000+ jobs) to reduce transaction overhead
 
-## Data Sources
+## API
 
-### Mock Source
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /api/v1/jobs | Paginated list with ?keyword, ?location, ?skill, ?page, ?limit |
+| GET | /api/v1/jobs/{job_id} | Single job detail (active + non-deleted only) |
+| GET | /api/v1/jobs/health | Module health check |
 
-Returns 18 realistic Vietnamese IT jobs across 9 categories.
+### Filters (GET /api/v1/jobs)
 
-### CSV Source
+| Param | Type | Description |
+|-------|------|-------------|
+| keyword | string | Search title and company_name (ILIKE) |
+| location | string | Partial match on location (ILIKE) |
+| skill | string | Exact skill match in JSONB array (case-insensitive) |
+| page | int | 1-based, default 1, minimum 1 |
+| limit | int | Items per page, default 20, max 100 |
 
-Loads from `data/sample/jobs_sample.csv`. Semicolon-separated skills.
+### Response: JobListResponse
 
-## Architecture Notes
+```json
+{
+  "items": [ ... ],
+  "total": 42,
+  "page": 1,
+  "limit": 20
+}
+```
 
-* Inherits `BaseEntity` for id, created_at, updated_at, deleted_at.
-* `skills` field uses PostgreSQL JSONB for structured storage.
-* Integer Primary Key used (consistent with project standard).
-* Soft delete via `deleted_at` column.
+* `total` = count of jobs matching CURRENT filters (not unfiltered total)
+* `items` use `JobListItem` (lightweight — no description, requirements, benefits)
+
+### Soft Delete Rules
+
+* `GET /jobs` — only returns `is_active=True AND deleted_at IS NULL`
+* `GET /jobs/{id}` — returns 404 for inactive or deleted jobs
+* Inactive/deleted jobs are never exposed via the read API
 
 ## Module Status
 
-Import Pipeline Complete
+CareerLink Parser Complete
 
 Owner Epic:
 
@@ -117,8 +143,8 @@ Epic 2 — Jobs Platform
 
 Current Phase:
 
-Phase 2.3 — Job Import Pipeline
+Phase 2.5 — CareerLink Detail Parser
 
 Next Phase:
 
-Phase 2.4 — Job CRUD & Search API
+Phase 2.6 — Jobs Frontend (User Web)

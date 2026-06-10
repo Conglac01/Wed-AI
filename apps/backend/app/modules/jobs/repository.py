@@ -1,5 +1,6 @@
 """JobRepository — database access layer. No business logic."""
 
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.modules.jobs.model import Job
@@ -13,12 +14,77 @@ class JobRepository:
         self.db = db
 
     # ------------------------------------------------------------------
-    # Read
+    # Read — single
     # ------------------------------------------------------------------
 
     def get_by_id(self, job_id: int) -> Job | None:
-        """Return a job by primary key, or None."""
-        return self.db.query(Job).filter(Job.id == job_id).first()
+        """Return an *active, non-deleted* job by primary key, or None."""
+        return (
+            self.db.query(Job)
+            .filter(
+                Job.id == job_id,
+                Job.is_active == True,   # noqa: E712
+                Job.deleted_at == None,  # noqa: E711
+            )
+            .first()
+        )
+
+    # ------------------------------------------------------------------
+    # Read — list
+    # ------------------------------------------------------------------
+
+    def list_jobs(
+        self,
+        *,
+        keyword: str | None = None,
+        location: str | None = None,
+        skill: str | None = None,
+        page: int = 1,
+        limit: int = 20,
+    ) -> tuple[list[Job], int]:
+        """Return a page of active, non-deleted jobs plus the total matching count.
+
+        Filters are AND-ed together.  All string filters are case-insensitive.
+        """
+
+        base = (
+            self.db.query(Job)
+            .filter(
+                Job.is_active == True,   # noqa: E712
+                Job.deleted_at == None,  # noqa: E711
+            )
+        )
+
+        # ── keyword → title OR company_name (ILIKE) ────────────
+        if keyword:
+            like = f"%{keyword}%"
+            base = base.filter(
+                Job.title.ilike(like) | Job.company_name.ilike(like)
+            )
+
+        # ── location → partial match (ILIKE) ──────────────────
+        if location:
+            base = base.filter(Job.location.ilike(f"%{location}%"))
+
+        # ── skill → JSONB array element match (case-insensitive)
+        if skill:
+            base = base.filter(
+                text(
+                    "EXISTS (SELECT 1 FROM jsonb_array_elements_text(jobs.skills) "
+                    "AS elem WHERE lower(elem) = lower(:skill))"
+                ).bindparams(skill=skill)
+            )
+
+        # ── Pagination ────────────────────────────────────────
+        total = base.count()
+        offset = (page - 1) * limit
+        rows = base.order_by(Job.created_at.desc()).offset(offset).limit(limit).all()
+
+        return rows, total
+
+    # ------------------------------------------------------------------
+    # Duplicate check (public for pipeline use)
+    # ------------------------------------------------------------------
 
     def exists_active_duplicate(
         self, title: str, company_name: str, location: str
