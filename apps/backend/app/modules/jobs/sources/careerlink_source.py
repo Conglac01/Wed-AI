@@ -1,7 +1,8 @@
 """CareerLink job source — fetch IT jobs from careerlink.vn.
 
 Follows the BaseJobSource contract: source_name property + fetch_jobs() returning
-list[JobCreate].  Uses requests with retry/timeout/User-Agent.  Never writes to DB.
+list[JobCreate].  Uses Crawl4AI for the JS-rendered listing page and requests
+for detail pages.  Never writes to DB.
 """
 
 import logging
@@ -62,9 +63,9 @@ class CareerLinkSource(BaseJobSource):
     """Fetches IT job listings from CareerLink.vn.
 
     Flow:
-        1. Fetch the IT software listing page.
+        1. Fetch the IT software listing page (Crawl4AI for JS rendering).
         2. Extract up to ``max_jobs`` detail URLs.
-        3. Fetch each detail page.
+        3. Fetch each detail page (requests — JSON-LD is in static HTML).
         4. Parse each detail page through ``parse_job_detail``.
         5. Return valid ``JobCreate`` payloads (failed parsings are skipped).
     """
@@ -88,14 +89,15 @@ class CareerLinkSource(BaseJobSource):
         """Fetch and parse CareerLink jobs.  Never writes to the database."""
         jobs: list[JobCreate] = []
 
-        # 1. Fetch listing page
-        listing_html = self._fetch(self._listing_url)
+        # 1. Fetch listing page via Crawl4AI (JS-rendered React SPA)
+        listing_html = self._fetch_listing(self._listing_url)
         if not listing_html:
             logger.warning("CareerLink listing page returned empty body")
             return jobs
 
         # 2. Extract detail URLs
         urls = extract_job_links(listing_html)
+        logger.info("Extracted %d job URLs from listing page", len(urls))
         if not urls:
             logger.warning("No job links extracted from CareerLink listing")
             return jobs
@@ -106,7 +108,7 @@ class CareerLinkSource(BaseJobSource):
         # 4. Fetch and parse each detail page
         for url in urls:
             try:
-                detail_html = self._fetch(url)
+                detail_html = self._fetch_detail(url)
                 if not detail_html:
                     logger.warning("Empty response for %s — skipping", url)
                     continue
@@ -122,8 +124,25 @@ class CareerLinkSource(BaseJobSource):
 
     # ── Internal helpers ──────────────────────────────────────────────
 
-    def _fetch(self, url: str) -> str | None:
-        """GET *url* and return the response text, or None on failure."""
+    def _fetch_listing(self, url: str) -> str | None:
+        """Fetch the listing page via Crawl4AI for JS rendering."""
+        try:
+            from app.infrastructure.external.crawl4ai_client import (  # noqa: PLC0415
+                Crawl4AIClient,
+            )
+
+            client = Crawl4AIClient()
+            page = client.fetch_page_sync(url)
+            if page.success and page.html:
+                return page.html
+            logger.warning("Crawl4AI listing fetch failed for %s: %s", url, page.error)
+            return None
+        except Exception:
+            logger.exception("Crawl4AI fetch error for listing %s", url)
+            return None
+
+    def _fetch_detail(self, url: str) -> str | None:
+        """GET *url* via requests and return the response text, or None on failure."""
         try:
             resp = self._session.get(url, timeout=_DEFAULT_TIMEOUT)
             resp.raise_for_status()

@@ -22,6 +22,11 @@ This project is the redesigned and improved version of PB1 and PB2. It combines 
 | 2.1  | Job Model/Schema             | 2026-06-10  | Job model (JSONB skills), schemas, migration, tests    |
 | 2.2  | CSV + Mock Job Sources       | 2026-06-10  | BaseJobSource ABC, MockSource (18 jobs), CSVSource (20) |
 | 2.3  | Job Import Pipeline          | 2026-06-10  | 8-stage pipeline, ImportSummary, dry_run, skill extractor |
+| 2.4  | Read-Only Jobs API           | 2026-06-10  | GET /jobs, GET /jobs/{id}, filters, pagination, 103 tests  |
+| 2.5  | CareerLink Detail Parser     | 2026-06-10  | JSON-LD extraction, listing parser, CareerLinkSource, 122 tests |
+| 2.6  | Crawl4AI Infrastructure      | 2026-06-10  | Crawl4AIClient, RawPage, async+sync API, 141 tests              |
+| 2.7  | User Jobs UI                 | 2026-06-10  | JobsPage, JobDetailPage, search/filter, cards, footer, build ok |
+| 2.8  | Listing Parser + Sync        | 2026-06-11  | crawler_tasks, scheduler, sync script, 10 real CareerLink jobs, 154 tests |
 
 ## Known Issues
 
@@ -117,6 +122,46 @@ This project is the redesigned and improved version of PB1 and PB2. It combines 
 1. **Dry run now computes quality scores** — `dry_run=True` runs the complete pipeline including quality score calculation; only `repository.create()` is skipped.
 2. **Skill extraction preserves first-appearance order** — skills are ordered by their position in the source text, not alphabetically.
 3. **Batch insert TODO** — noted in `import_pipeline.py` and README for Phase 4+ performance optimization.
+
+### From Phase 2.4
+
+1. **Read-only API first** — listing and detail endpoints built before any write/admin routes. Simpler to verify, simpler to test.
+2. **JSONB skill filter via raw text()** — `jsonb_array_elements_text()` wrapped in `text().bindparams()`; SQLAlchemy's `func` construct couldn't compose the `lower()` call correctly with PostgreSQL's set-returning function.
+3. **FastAPI Query ge/le for pagination validation** — 422 returned automatically by FastAPI when `page=0` or `limit=500`; no manual error mapping needed.
+4. **TestClient with dependency_overrides** — `seeded_jobs_db` fixture seeds via import pipeline, then the override injects the seeded session into the FastAPI dependency graph.
+
+### From Phase 2.5
+
+1. **JSON-LD JobPosting is the primary data source** — CareerLink embeds structured data via `<script type="application/ld+json">` blocks. This is far more reliable than CSS selectors for extracting title, company, location, salary, deadline, and logo.
+2. **Benefits live outside JSON-LD** — CareerLink renders `job-benefit-item` divs in the HTML that are NOT included in the JSON-LD description. Must scrape both.
+3. **Description/Requirements split via marker** — CareerLink consistently uses `* Kinh nghiệm / Kỹ năng chi tiết:` as a separator within the JSON-LD description field. Splitting on this yields clean description and requirements sections.
+4. **Listing pages use `<a class="job-link">`** — 50 jobs per page with `href="/tim-viec-lam/<slug>/<id>?source=site"`. Strip `?source=site` to get canonical URLs.
+5. **One failed page doesn't crash the source** — `CareerLinkSource.fetch_jobs()` catches ValueError per page, logs, and continues. Returns whatever valid `JobCreate` payloads were parsed.
+6. **Source must never import repository/service** — `CareerLinkSource` only depends on `parsers` and `schema`. DB access is exclusively the pipeline's responsibility.
+7. **Real HTML fixtures are mandatory** — 4 fixtures (sample_listing, sample_detail, missing_title, malformed_detail) captured from live CareerLink pages. Tests verify against real markup structure, not fabricated HTML.
+
+### From Phase 2.6
+
+1. **RawPage is the stable contract** — a Pydantic BaseModel insulating all consumers from Crawl4AI internals. Future parsers never import crawl4ai; they consume `RawPage.html`, `RawPage.markdown`, etc.
+2. **Both async + sync APIs required** — `fetch_page()` for async callers, `fetch_page_sync()` for synchronous callers (e.g. `BaseJobSource.fetch_jobs()`). The sync wrapper detects running event loops and spawns a thread-pool executor when needed.
+3. **Crawl4AI must never leak** — `from crawl4ai` imports are confined to `crawl4ai_client.py`. All other modules import only `RawPage` and `Crawl4AIClient` from `app.infrastructure.external`.
+4. **Error handling at the boundary** — all Crawl4AI exceptions (DNS, timeout, blocked) are caught inside `fetch_page()` and returned as `RawPage(success=False, error="...")`. No exception escapes the client.
+5. **Client is source-agnostic** — no CareerLink, ITviec, or job-specific logic. Crawl4AIClient is usable by AI Interview, CV Matching, Chatbot, and any future module.
+6. **AI-ready content preservation** — `RawPage.markdown` and `RawPage.text` carry Crawl4AI's clean output without summarization or truncation. Future AI modules decide how to use it.
+7. **Mock at boundary for tests** — tests monkeypatch `crawl4ai.AsyncWebCrawler` (the external dependency), not `RawPage` (our contract). This validates the wrapper without depending on Crawl4AI internals.
+
+### From Phase 2.7
+
+1. **API-first frontend** — all job data comes from backend. Zero hardcoded jobs, fake companies, or mock data. `getJobs()` and `getJobById()` map directly to `GET /api/v1/jobs` and `GET /api/v1/jobs/{id}`.
+2. **Design language follows reference images** — blue gradient hero, white rounded cards with soft shadows, horizontal job cards with company logo, colored skill tags, dark navy 5-column footer with newsletter banner.
+3. **Branding: WEB-AI AI CAREER PLATFORM** — logo in header + footer, consistent across all pages. Old "ViecConnect IT Jobs" header replaced.
+4. **Loading / empty / error states are mandatory** — skeleton cards for loading, "Không tìm thấy việc làm phù hợp" for empty, specific error messages, 404 for missing jobs. Never blank screens.
+5. **No state management library** — useEffect + useState is sufficient for jobs list + detail. No Redux, Zustand, or MobX needed.
+6. **Horizontal cards, not vertical** — job cards are left-right (logo | title+company+location+salary+skills) per reference images. Single column mobile, two tablet, three desktop.
+7. **Top Companies section conditional** — groups jobs by company_name from a separate API call (limit=100), sorts by count desc, renders only if ≥4 unique companies. Pure data-driven — hides if not enough data.
+8. **Placeholder buttons for future features** — "Phân tích CV" and "Ứng tuyển" are rendered but disabled. Ready for Phase 2.8+ integration.
+9. **Strict TypeScript throughout** — no `any`, no `unknown` in interfaces. Types mirror backend Pydantic schemas exactly.
+10. **Footer is professionally complete** — 5 columns (brand, candidates, employers, about, contact), social icons, SSL badge, copyright. All placeholder links ready for future pages.
 
 ---
 

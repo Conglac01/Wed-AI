@@ -70,7 +70,9 @@ class JobRepository:
         if skill:
             base = base.filter(
                 text(
-                    "EXISTS (SELECT 1 FROM jsonb_array_elements_text(jobs.skills) "
+                    "jobs.skills IS NOT NULL "
+                    "AND jsonb_typeof(jobs.skills) = 'array' "
+                    "AND EXISTS (SELECT 1 FROM jsonb_array_elements_text(jobs.skills) "
                     "AS elem WHERE lower(elem) = lower(:skill))"
                 ).bindparams(skill=skill)
             )

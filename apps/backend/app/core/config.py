@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     # CORS — comma-separated origins
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:5174"
 
+    # ── Jobs Scheduler ───────────────────────────────────────────
+    JOBS_SCHEDULER_ENABLED: bool = False
+    JOBS_SYNC_INTERVAL_HOURS: int = 6
+    JOBS_SYNC_MAX_JOBS: int = 50
+    JOBS_SYNC_TIMEOUT_SECONDS: int = 30
+    CRAWLER_REQUEST_DELAY_SECONDS: float = 1.0
+
     @property
     def allowed_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
