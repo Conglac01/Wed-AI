@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     # CORS — comma-separated origins
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:5174"
 
+    # ── Storage ──────────────────────────────────────────────────
+    STORAGE_ROOT: str = "./storage"
+
     # ── Jobs Scheduler ───────────────────────────────────────────
     JOBS_SCHEDULER_ENABLED: bool = False
     JOBS_SYNC_INTERVAL_HOURS: int = 6
