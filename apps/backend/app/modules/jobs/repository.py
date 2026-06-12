@@ -68,19 +68,26 @@ class JobRepository:
 
         # ── skill → JSONB array element match (case-insensitive)
         if skill:
+            from sqlalchemy import cast, func, String
+
             base = base.filter(
-                text(
-                    "jobs.skills IS NOT NULL "
-                    "AND jsonb_typeof(jobs.skills) = 'array' "
-                    "AND EXISTS (SELECT 1 FROM jsonb_array_elements_text(jobs.skills) "
-                    "AS elem WHERE lower(elem) = lower(:skill))"
-                ).bindparams(skill=skill)
+                Job.skills.is_not(None),
+                func.lower(cast(Job.skills, String)).contains(
+                    func.lower(skill)
+                ),
             )
 
         # ── Pagination ────────────────────────────────────────
         total = base.count()
         offset = (page - 1) * limit
-        rows = base.order_by(Job.created_at.desc()).offset(offset).limit(limit).all()
+        # Real jobs (with source_name) first, mock jobs (NULL source) last.
+        # Within each group, newest first.
+        rows = (
+            base.order_by(Job.source_name.is_(None), Job.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
 
         return rows, total
 

@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import { Link, Outlet } from "react-router-dom";
 
 export function AdminLayout() {
   return (
@@ -20,9 +20,12 @@ export function AdminLayout() {
           <span className="rounded-lg px-3 py-2 text-sm text-gray-400">
             Người dùng
           </span>
-          <span className="rounded-lg px-3 py-2 text-sm text-gray-400">
+          <Link
+            to="/jobs"
+            className="rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-200"
+          >
             Việc làm
-          </span>
+          </Link>
           <span className="rounded-lg px-3 py-2 text-sm text-gray-400">
             Hạn ngạch
           </span>

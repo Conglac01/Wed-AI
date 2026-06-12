@@ -29,9 +29,12 @@ export function Router() {
           <Route path="register" element={<RegisterPage />} />
           <Route path="jobs" element={<JobsPage />} />
           <Route path="jobs/:id" element={<JobDetailPage />} />
-          <Route path="cv-analysis" element={<Placeholder title="Phân Tích CV" desc="Tính năng phân tích CV bằng AI đang được phát triển. Bạn sẽ sớm có thể upload CV và nhận đánh giá chi tiết." />} />
-          <Route path="ai-interview" element={<Placeholder title="Phỏng Vấn AI" desc="Tính năng luyện phỏng vấn với AI đang được phát triển. Bạn sẽ sớm có thể thực hành phỏng vấn IT với phản hồi tức thì." />} />
-          <Route path="profile" element={<ProtectedRoute><Placeholder title="Trang cá nhân" desc="Tính năng đang được phát triển." /></ProtectedRoute>} />
+          <Route path="cv-analysis" element={<Placeholder title="Phân Tích CV" desc="Epic 3 — CV Upload & CV Analysis. Tính năng đang được phát triển." />} />
+          <Route path="interview" element={<Placeholder title="Phỏng Vấn với AI" desc="Epic 6 — AI Interview. Tính năng đang được phát triển." />} />
+          <Route path="ai-interview" element={<Placeholder title="Phỏng Vấn AI" desc="Epic 6 — AI Interview. Tính năng đang được phát triển." />} />
+          <Route path="interview-history" element={<Placeholder title="Lịch Sử Phỏng Vấn" desc="Epic 6 — Interview History. Tính năng đang được phát triển." />} />
+          <Route path="settings" element={<Placeholder title="Cài Đặt" desc="Thiết lập tài khoản người dùng. Tính năng đang được phát triển." />} />
+          <Route path="profile" element={<ProtectedRoute><Placeholder title="Trang cá nhân" desc="Thông tin hồ sơ cá nhân. Tính năng đang được phát triển." /></ProtectedRoute>} />
         </Route>
       </Routes>
     </BrowserRouter>

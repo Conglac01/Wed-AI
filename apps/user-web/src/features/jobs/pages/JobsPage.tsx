@@ -44,7 +44,7 @@ function TopCompanies({ jobs }: { jobs: JobListItem[] }) {
   if (companies.length < 4) return null;
 
   return (
-    <section className="mt-16">
+    <section className="mt-10 sm:mt-16">
       <h2 className="text-2xl font-bold text-gray-900">Công Ty Công Nghệ</h2>
       <p className="mt-1 text-sm text-gray-500">Những công ty hàng đầu đang tuyển dụng IT</p>
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -77,8 +77,8 @@ function TopCompanies({ jobs }: { jobs: JobListItem[] }) {
 
 function NewsletterBanner() {
   return (
-    <section className="mt-16 rounded-2xl px-6 py-12 text-center text-white sm:px-16" style={{ background: "linear-gradient(135deg, #0047CC, #003399)" }}>
-      <h2 className="text-2xl font-bold sm:text-3xl">Nhận thông tin việc làm mới nhất</h2>
+    <section className="mt-10 rounded-2xl px-4 py-10 text-center text-white sm:mt-16 sm:px-16 sm:py-12" style={{ background: "linear-gradient(135deg, #0047CC, #003399)" }}>
+      <h2 className="text-xl font-bold sm:text-3xl">Nhận thông tin việc làm mới nhất</h2>
       <p className="mt-2 text-sm text-white/70">Đăng ký để nhận thông báo về các cơ hội việc làm IT phù hợp</p>
       <form className="mx-auto mt-6 flex max-w-md flex-col gap-2 sm:flex-row" onSubmit={(e) => e.preventDefault()}>
         <input type="email" placeholder="Nhập email của bạn" className="flex-1 rounded-xl border-0 px-4 py-3 text-sm text-white outline-none ring-1 ring-inset ring-white/20 placeholder:text-white/40 focus:ring-white/50" style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
@@ -130,7 +130,7 @@ export function JobsPage() {
   const handleClear = useCallback(() => { setKeyword(""); setLocation(""); setSkill(""); setPage(1); }, []);
 
   return (
-    <div className="mx-auto max-w-[1280px] px-6 py-10">
+    <div className="mx-auto max-w-[1280px] px-4 py-6 sm:px-6 sm:py-10">
       {/* Filters */}
       <div className="mb-6">
         <JobFilters keyword={keyword} location={location} skill={skill} total={total} onClear={handleClear} />

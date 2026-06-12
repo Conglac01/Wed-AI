@@ -37,13 +37,13 @@ export function JobSearchBar({
       {/* Single pill search bar */}
       <form
         onSubmit={handleSubmit}
-        className="flex h-14 items-center overflow-hidden rounded-[50px] bg-white shadow-sm"
-        style={{ padding: "6px" }}
+        className="flex h-12 items-center overflow-hidden rounded-[50px] bg-white shadow-sm sm:h-14"
+        style={{ padding: "5px" }}
       >
         {/* Location input */}
-        <div className="flex h-full w-[25%] min-w-0 items-center gap-1.5 pl-3">
+        <div className="flex h-full w-[28%] min-w-0 items-center gap-1 pl-2 sm:w-[25%] sm:gap-1.5 sm:pl-3">
           <svg
-            className="h-4 w-4 shrink-0 text-gray-400"
+            className="h-3.5 w-3.5 shrink-0 text-gray-400 sm:h-4 sm:w-4"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth="1.5"
@@ -65,17 +65,17 @@ export function JobSearchBar({
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="Địa điểm"
-            className="h-full w-full border-0 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none"
+            className="h-full w-full border-0 bg-transparent text-xs text-gray-900 placeholder-gray-400 outline-none sm:text-sm"
           />
         </div>
 
         {/* Divider */}
-        <div className="mx-1 h-5 w-px shrink-0 bg-gray-200" />
+        <div className="mx-1 h-4 w-px shrink-0 bg-gray-200 sm:h-5" />
 
         {/* Keyword input */}
-        <div className="flex h-full flex-1 min-w-0 items-center gap-1.5 pl-3">
+        <div className="flex h-full flex-1 min-w-0 items-center gap-1 pl-2 sm:gap-1.5 sm:pl-3">
           <svg
-            className="h-4 w-4 shrink-0 text-gray-400"
+            className="h-3.5 w-3.5 shrink-0 text-gray-400 sm:h-4 sm:w-4"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth="1.5"
@@ -92,20 +92,20 @@ export function JobSearchBar({
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             placeholder="Tìm vị trí, công ty, kỹ năng..."
-            className="h-full w-full border-0 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none"
+            className="h-full w-full border-0 bg-transparent text-xs text-gray-900 placeholder-gray-400 outline-none sm:text-sm"
           />
         </div>
 
         {/* Search button */}
         <button
           type="submit"
-          className="flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-[44px] px-5 text-sm font-semibold text-white transition-colors"
-          style={{ backgroundColor: "#0047CC", width: "20%" }}
+          className="flex h-[calc(100%-4px)] w-[26%] shrink-0 items-center justify-center gap-1 rounded-[44px] px-2 text-xs font-semibold text-white transition-colors sm:h-11 sm:w-[20%] sm:gap-1.5 sm:px-5 sm:text-sm"
+          style={{ backgroundColor: "#0047CC" }}
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#003399")}
           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#0047CC")}
         >
           <svg
-            className="h-4 w-4"
+            className="h-3.5 w-3.5 sm:h-4 sm:w-4"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth="2"

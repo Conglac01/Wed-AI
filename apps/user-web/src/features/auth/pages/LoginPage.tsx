@@ -1,10 +1,12 @@
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/features/auth/AuthProvider";
 
 export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,7 +20,7 @@ export function LoginPage() {
     setError(null);
     if (!email || !password) { setError("Vui lòng nhập email và mật khẩu."); return; }
     setLoading(true);
-    try { await login({ email, password }); navigate("/", { replace: true }); }
+    try { await login({ email, password }); navigate(redirectTo, { replace: true }); }
     catch (err) { setError(err instanceof Error ? err.message : "Đã xảy ra lỗi không xác định."); }
     finally { setLoading(false); }
   }

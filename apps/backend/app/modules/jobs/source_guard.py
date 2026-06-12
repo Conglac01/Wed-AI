@@ -12,10 +12,19 @@ logger = logging.getLogger(__name__)
 
 # ── Blocked-page indicator substrings (lowercased) ──────────────────────
 _BLOCKED_INDICATORS: list[str] = [
+    # Vietnamese anti-bot phrases (real block pages use these)
     "xác nhận bạn không phải robot",
     "không phải robot",
+    # hcaptcha is always an anti-bot challenge (unlike recaptcha which
+    # also appears in normal login forms like CareerLink's Google login)
     "hcaptcha",
-    "captcha",
+    # Cloudflare / common CDN challenge markers
+    "cf-challenge",
+    "cf_captcha",
+    # Akamai / PerimeterX / DataDome markers
+    "akamai-bot",
+    "perimeterx",
+    "datadome",
 ]
 
 
