@@ -6,6 +6,7 @@ import { LoginPage } from "@/features/auth/pages/LoginPage";
 import { RegisterPage } from "@/features/auth/pages/RegisterPage";
 import { JobsPage } from "@/features/jobs/pages/JobsPage";
 import { JobDetailPage } from "@/features/jobs/pages/JobDetailPage";
+import { CVAnalysisPage } from "@/features/cv-analysis/pages/CVAnalysisPage";
 
 const Placeholder = ({ title, desc }: { title: string; desc: string }) => (
   <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -29,7 +30,7 @@ export function Router() {
           <Route path="register" element={<RegisterPage />} />
           <Route path="jobs" element={<JobsPage />} />
           <Route path="jobs/:id" element={<JobDetailPage />} />
-          <Route path="cv-analysis" element={<Placeholder title="Phân Tích CV" desc="Epic 3 — CV Upload & CV Analysis. Tính năng đang được phát triển." />} />
+          <Route path="cv-analysis" element={<CVAnalysisPage />} />
           <Route path="interview" element={<Placeholder title="Phỏng Vấn với AI" desc="Epic 6 — AI Interview. Tính năng đang được phát triển." />} />
           <Route path="ai-interview" element={<Placeholder title="Phỏng Vấn AI" desc="Epic 6 — AI Interview. Tính năng đang được phát triển." />} />
           <Route path="interview-history" element={<Placeholder title="Lịch Sử Phỏng Vấn" desc="Epic 6 — Interview History. Tính năng đang được phát triển." />} />
